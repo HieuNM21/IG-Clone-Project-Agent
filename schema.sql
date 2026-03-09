@@ -134,3 +134,40 @@ CREATE TABLE notifications (
     CONSTRAINT fk_notif_user  FOREIGN KEY (user_id)  REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_notif_actor FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------
+-- 9. CHAT GROUPS
+-- -----------------------------------------------------------
+CREATE TABLE chat_groups (
+    id          BIGINT       NOT NULL AUTO_INCREMENT,
+    name        VARCHAR(100) NOT NULL,
+    created_by  BIGINT       NOT NULL,
+    created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    INDEX idx_chatgroup_creator (created_by),
+    CONSTRAINT fk_chatgroup_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------
+-- 10. CHAT GROUP MEMBERS (join table)
+-- -----------------------------------------------------------
+CREATE TABLE chat_group_members (
+    group_id    BIGINT NOT NULL,
+    user_id     BIGINT NOT NULL,
+    PRIMARY KEY (group_id, user_id),
+    CONSTRAINT fk_cgm_group FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
+    CONSTRAINT fk_cgm_user  FOREIGN KEY (user_id)  REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------
+-- 11. BOOKMARKS (saved posts)
+-- -----------------------------------------------------------
+CREATE TABLE bookmarks (
+    user_id     BIGINT    NOT NULL,
+    post_id     BIGINT    NOT NULL,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, post_id),
+    INDEX idx_bookmarks_post (post_id),
+    CONSTRAINT fk_bookmarks_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_bookmarks_post FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -5,6 +5,7 @@ import RegisterPage from './pages/RegisterPage';
 import FeedPage from './pages/FeedPage';
 import ProfilePage from './pages/ProfilePage';
 import DirectPage from './pages/DirectPage';
+import PostPage from './pages/PostPage';
 import Navbar from './components/Navbar';
 
 const PrivateRoute = ({ children }) => {
@@ -32,6 +33,7 @@ function App() {
           <Route path="/" element={<PrivateRoute><FeedPage /></PrivateRoute>} />
           <Route path="/profile/:username" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
           <Route path="/direct" element={<PrivateRoute><DirectPage /></PrivateRoute>} />
+          <Route path="/post/:id" element={<PrivateRoute><PostPage /></PrivateRoute>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>

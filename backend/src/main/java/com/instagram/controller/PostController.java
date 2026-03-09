@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -51,5 +52,20 @@ public class PostController {
         User currentUser = userService.findByUsername(userDetails.getUsername());
         postService.deletePost(id, currentUser);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/bookmark")
+    public ResponseEntity<Map<String, Boolean>> toggleBookmark(@PathVariable Long id,
+                                                                @AuthenticationPrincipal UserDetails userDetails) {
+        User currentUser = userService.findByUsername(userDetails.getUsername());
+        boolean bookmarked = postService.toggleBookmark(id, currentUser);
+        return ResponseEntity.ok(Map.of("bookmarked", bookmarked));
+    }
+
+    @GetMapping("/bookmarks")
+    public ResponseEntity<List<PostResponse>> getBookmarkedPosts(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User currentUser = userService.findByUsername(userDetails.getUsername());
+        return ResponseEntity.ok(postService.getBookmarkedPosts(currentUser));
     }
 }

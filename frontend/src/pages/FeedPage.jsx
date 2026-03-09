@@ -73,6 +73,10 @@ const FeedPage = () => {
     );
   };
 
+  const handleStoryCreated = () => {
+    fetchStories(); // re-fetch to get properly formatted story data
+  };
+
   if (initialLoad) {
     return (
       <div className="flex items-center justify-center h-[80vh]">
@@ -84,7 +88,7 @@ const FeedPage = () => {
   return (
     <div className="max-w-xl mx-auto px-4 py-4">
       {/* Story Tray */}
-      <StoryTray stories={stories} currentUser={user} />
+      <StoryTray stories={stories} currentUser={user} onStoryCreated={handleStoryCreated} />
 
       {/* Posts */}
       <div className="space-y-6 mt-6">
@@ -92,7 +96,7 @@ const FeedPage = () => {
           <div className="text-center py-20">
             <div className="text-6xl mb-4">📷</div>
             <h2 className="text-xl font-semibold mb-2">No Posts Yet</h2>
-            <p className="text-ig-text-secondary">Follow people to see their posts in your feed</p>
+            <p className="text-ig-text-secondary">Follow people to see their posts in your feed, or create a post using the + button above</p>
           </div>
         )}
 

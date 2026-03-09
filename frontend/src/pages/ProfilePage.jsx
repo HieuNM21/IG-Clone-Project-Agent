@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import EditProfileModal from '../components/EditProfileModal';
 import { HiOutlineViewGrid } from 'react-icons/hi';
+import { FiBookmark } from 'react-icons/fi';
+import { IoPaperPlaneOutline } from 'react-icons/io5';
 
 const ProfilePage = () => {
   const { username } = useParams();
@@ -10,17 +13,29 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [savedPosts, setSavedPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [activeTab, setActiveTab] = useState('posts');
+
+  const isOwnProfile = currentUser?.username === username;
 
   useEffect(() => {
     const fetchProfile = async () => {
       setLoading(true);
+      setActiveTab('posts');
       try {
         const profileRes = await api.get(`/users/${username}`);
         setProfile(profileRes.data);
 
         const postsRes = await api.get(`/posts/user/${profileRes.data.id}`);
         setPosts(postsRes.data);
+
+        // Fetch saved posts only for own profile
+        if (currentUser?.username === username) {
+          const savedRes = await api.get('/posts/bookmarks');
+          setSavedPosts(savedRes.data);
+        }
       } catch (err) {
         console.error('Failed to fetch profile:', err);
       } finally {
@@ -29,7 +44,7 @@ const ProfilePage = () => {
     };
 
     fetchProfile();
-  }, [username]);
+  }, [username, currentUser?.username]);
 
   const handleFollow = async () => {
     if (!profile) return;
@@ -43,6 +58,10 @@ const ProfilePage = () => {
     } catch (err) {
       console.error('Follow error:', err);
     }
+  };
+
+  const handleMessageUser = () => {
+    navigate('/direct', { state: { startChatWith: profile } });
   };
 
   if (loading) {
@@ -61,13 +80,12 @@ const ProfilePage = () => {
     );
   }
 
-  const isOwnProfile = currentUser?.username === profile.username;
+  const displayPosts = activeTab === 'posts' ? posts : savedPosts;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 fade-in">
       {/* Profile Header */}
       <div className="flex flex-col md:flex-row items-center md:items-start gap-8 mb-10">
-        {/* Avatar */}
         <div className="story-ring flex-shrink-0">
           <div className="story-ring-inner">
             <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-ig-card flex items-center justify-center overflow-hidden">
@@ -80,29 +98,32 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Info */}
         <div className="flex-1 text-center md:text-left">
           <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
             <h1 className="text-xl font-light">{profile.username}</h1>
             {isOwnProfile ? (
-              <button className="px-6 py-1.5 bg-ig-card border border-ig-border rounded-lg text-sm font-semibold hover:bg-ig-border transition-smooth">
+              <button onClick={() => setShowEditProfile(true)}
+                className="px-6 py-1.5 bg-ig-card border border-ig-border rounded-lg text-sm font-semibold hover:bg-ig-border transition-smooth">
                 Edit Profile
               </button>
             ) : (
-              <button
-                onClick={handleFollow}
-                className={`px-6 py-1.5 rounded-lg text-sm font-semibold transition-smooth ${
-                  profile.followedByCurrentUser
-                    ? 'bg-ig-card border border-ig-border hover:bg-ig-border'
-                    : 'bg-gradient-to-r from-ig-primary to-ig-purple text-white hover:opacity-90'
-                }`}
-              >
-                {profile.followedByCurrentUser ? 'Following' : 'Follow'}
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={handleFollow}
+                  className={`px-6 py-1.5 rounded-lg text-sm font-semibold transition-smooth ${
+                    profile.followedByCurrentUser
+                      ? 'bg-ig-card border border-ig-border hover:bg-ig-border'
+                      : 'bg-gradient-to-r from-ig-primary to-ig-purple text-white hover:opacity-90'
+                  }`}>
+                  {profile.followedByCurrentUser ? 'Following' : 'Follow'}
+                </button>
+                <button onClick={handleMessageUser}
+                  className="px-4 py-1.5 bg-ig-card border border-ig-border rounded-lg text-sm font-semibold hover:bg-ig-border transition-smooth flex items-center gap-1.5">
+                  <IoPaperPlaneOutline /> Message
+                </button>
+              </div>
             )}
           </div>
 
-          {/* Stats */}
           <div className="flex justify-center md:justify-start gap-8 mb-4">
             <div className="text-center md:text-left">
               <span className="font-semibold">{profile.postCount}</span>
@@ -118,7 +139,6 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          {/* Bio */}
           <div>
             {profile.fullName && <p className="font-semibold text-sm">{profile.fullName}</p>}
             {profile.bio && <p className="text-sm mt-1 text-ig-text-secondary">{profile.bio}</p>}
@@ -126,42 +146,69 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Tab */}
+      {/* Tabs */}
       <div className="border-t border-ig-border">
-        <div className="flex justify-center">
-          <button className="flex items-center gap-2 py-3 px-4 text-xs uppercase tracking-widest border-t border-ig-text -mt-px">
+        <div className="flex justify-center gap-12">
+          <button
+            onClick={() => setActiveTab('posts')}
+            className={`flex items-center gap-2 py-3 px-4 text-xs uppercase tracking-widest transition-smooth ${
+              activeTab === 'posts' ? 'border-t border-ig-text -mt-px text-ig-text' : 'text-ig-text-secondary hover:text-ig-text'
+            }`}>
             <HiOutlineViewGrid className="text-lg" /> Posts
           </button>
+          {isOwnProfile && (
+            <button
+              onClick={() => setActiveTab('saved')}
+              className={`flex items-center gap-2 py-3 px-4 text-xs uppercase tracking-widest transition-smooth ${
+                activeTab === 'saved' ? 'border-t border-ig-text -mt-px text-ig-text' : 'text-ig-text-secondary hover:text-ig-text'
+              }`}>
+              <FiBookmark className="text-lg" /> Saved
+            </button>
+          )}
         </div>
       </div>
 
       {/* Post Grid */}
-      {posts.length === 0 ? (
+      {displayPosts.length === 0 ? (
         <div className="text-center py-16">
-          <div className="text-5xl mb-4">📷</div>
-          <h3 className="text-xl font-light">No Posts Yet</h3>
+          <div className="text-5xl mb-4">{activeTab === 'posts' ? '📷' : '🔖'}</div>
+          <h3 className="text-xl font-light">
+            {activeTab === 'posts' ? 'No Posts Yet' : 'No Saved Posts'}
+          </h3>
+          {activeTab === 'saved' && (
+            <p className="text-ig-text-secondary text-sm mt-2">Save posts to see them here</p>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-1 mt-1">
-          {posts.map((post) => (
-            <div
+          {displayPosts.map((post) => (
+            <Link
+              to={`/post/${post.id}`}
               key={post.id}
               className="aspect-square bg-ig-card overflow-hidden cursor-pointer group relative"
             >
-              <img
-                src={post.imageUrl}
-                alt={post.caption || 'Post'}
-                className="w-full h-full object-cover transition-smooth group-hover:opacity-75"
-              />
+              <img src={post.imageUrl} alt={post.caption || 'Post'}
+                className="w-full h-full object-cover transition-smooth group-hover:opacity-75" />
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-smooth bg-black/30">
                 <div className="flex gap-6 text-white font-semibold">
                   <span>❤️ {post.likeCount}</span>
                   <span>💬 {post.commentCount}</span>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
+      )}
+
+      {showEditProfile && profile && (
+        <EditProfileModal
+          profile={profile}
+          onClose={() => setShowEditProfile(false)}
+          onProfileUpdated={(updatedProfile) => {
+            setProfile(updatedProfile);
+            setShowEditProfile(false);
+          }}
+        />
       )}
     </div>
   );

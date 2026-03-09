@@ -1,16 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
+import { useWebSocket } from '../context/WebSocketContext';
 import { FiHeart, FiMessageCircle, FiBookmark, FiMoreHorizontal } from 'react-icons/fi';
-import { FaHeart } from 'react-icons/fa';
+import { FaHeart, FaBookmark } from 'react-icons/fa';
 
 const PostCard = ({ post, onLikeToggle }) => {
+  const { subscribe, connected } = useWebSocket();
   const [liked, setLiked] = useState(post.likedByCurrentUser);
+  const [bookmarked, setBookmarked] = useState(post.bookmarkedByCurrentUser || false);
   const [likeAnimation, setLikeAnimation] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [commentCount, setCommentCount] = useState(post.commentCount);
+
+  // Subscribe to realtime comments
+  useEffect(() => {
+    if (!connected) return;
+    const sub = subscribe(`/topic/post.${post.id}.comments`, (comment) => {
+      setComments((prev) => {
+        if (prev.find((c) => c.id === comment.id)) return prev;
+        return [...prev, comment];
+      });
+      setCommentCount((prev) => prev + 1);
+    });
+    return () => { if (sub) sub.unsubscribe(); };
+  }, [connected, post.id, subscribe]);
 
   const handleLike = async () => {
     try {
@@ -24,6 +40,15 @@ const PostCard = ({ post, onLikeToggle }) => {
       onLikeToggle?.(post.id, newLiked);
     } catch (err) {
       console.error('Like error:', err);
+    }
+  };
+
+  const handleBookmark = async () => {
+    try {
+      const res = await api.post(`/posts/${post.id}/bookmark`);
+      setBookmarked(res.data.bookmarked);
+    } catch (err) {
+      console.error('Bookmark error:', err);
     }
   };
 
@@ -41,21 +66,15 @@ const PostCard = ({ post, onLikeToggle }) => {
       const res = await api.get(`/posts/${post.id}/comments`);
       setComments(res.data);
       setShowComments(true);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const submitComment = async () => {
     if (!newComment.trim()) return;
     try {
-      const res = await api.post(`/posts/${post.id}/comments`, { content: newComment });
-      setComments((prev) => [...prev, res.data]);
+      await api.post(`/posts/${post.id}/comments`, { content: newComment });
       setNewComment('');
-      setCommentCount((prev) => prev + 1);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const timeAgo = (dateStr) => {
@@ -98,12 +117,7 @@ const PostCard = ({ post, onLikeToggle }) => {
 
       {/* Image */}
       <div className="relative cursor-pointer" onDoubleClick={handleDoubleTap}>
-        <img
-          src={post.imageUrl}
-          alt={post.caption || 'Post'}
-          className="w-full aspect-square object-cover"
-          loading="lazy"
-        />
+        <img src={post.imageUrl} alt={post.caption || 'Post'} className="w-full aspect-square object-cover" loading="lazy" />
         {likeAnimation && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <FaHeart className="text-white text-7xl heart-beat drop-shadow-2xl" />
@@ -126,8 +140,12 @@ const PostCard = ({ post, onLikeToggle }) => {
               <FiMessageCircle className="text-2xl" />
             </button>
           </div>
-          <button className="hover:opacity-70 transition-smooth">
-            <FiBookmark className="text-2xl" />
+          <button onClick={handleBookmark} className="hover:opacity-70 transition-smooth">
+            {bookmarked ? (
+              <FaBookmark className="text-2xl text-ig-text" />
+            ) : (
+              <FiBookmark className="text-2xl" />
+            )}
           </button>
         </div>
 
@@ -169,14 +187,10 @@ const PostCard = ({ post, onLikeToggle }) => {
 
       {/* Add Comment */}
       <div className="border-t border-ig-border flex items-center px-4 py-2.5">
-        <input
-          type="text"
-          placeholder="Add a comment..."
-          value={newComment}
+        <input type="text" placeholder="Add a comment..." value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && submitComment()}
-          className="flex-1 bg-transparent text-sm focus:outline-none placeholder-ig-text-secondary"
-        />
+          className="flex-1 bg-transparent text-sm focus:outline-none placeholder-ig-text-secondary" />
         {newComment.trim() && (
           <button onClick={submitComment} className="text-ig-primary font-semibold text-sm hover:text-ig-primary-dark transition-smooth">
             Post

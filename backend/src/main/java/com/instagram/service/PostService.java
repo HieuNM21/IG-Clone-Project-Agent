@@ -2,12 +2,16 @@ package com.instagram.service;
 
 import com.instagram.dto.PostRequest;
 import com.instagram.dto.PostResponse;
+import com.instagram.model.Bookmark;
 import com.instagram.model.Post;
 import com.instagram.model.User;
+import com.instagram.repository.BookmarkRepository;
 import com.instagram.repository.CommentRepository;
 import com.instagram.repository.FollowRepository;
 import com.instagram.repository.LikeRepository;
 import com.instagram.repository.PostRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +26,8 @@ import java.util.stream.Collectors;
 @Service
 public class PostService {
 
+    private static final Logger logger = LoggerFactory.getLogger(PostService.class);
+
     @Autowired
     private PostRepository postRepository;
 
@@ -34,6 +40,9 @@ public class PostService {
     @Autowired
     private FollowRepository followRepository;
 
+    @Autowired
+    private BookmarkRepository bookmarkRepository;
+
     @Transactional
     public PostResponse createPost(PostRequest request, User currentUser) {
         Post post = Post.builder()
@@ -43,13 +52,13 @@ public class PostService {
                 .build();
 
         post = postRepository.save(post);
+        logger.info("Post {} created by {}", post.getId(), currentUser.getUsername());
         return mapToPostResponse(post, currentUser);
     }
 
     @Transactional(readOnly = true)
     public Page<PostResponse> getFeed(User currentUser, int page, int size) {
         List<Long> followingIds = followRepository.findFollowingIds(currentUser.getId());
-        // Include the current user's own posts in the feed
         List<Long> feedUserIds = new ArrayList<>(followingIds);
         feedUserIds.add(currentUser.getId());
 
@@ -84,6 +93,37 @@ public class PostService {
         }
 
         postRepository.delete(post);
+        logger.info("Post {} deleted by {}", postId, currentUser.getUsername());
+    }
+
+    @Transactional
+    public boolean toggleBookmark(Long postId, User currentUser) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        boolean alreadyBookmarked = bookmarkRepository.existsByUserIdAndPostId(currentUser.getId(), postId);
+
+        if (alreadyBookmarked) {
+            bookmarkRepository.deleteByUserIdAndPostId(currentUser.getId(), postId);
+            logger.info("User {} removed bookmark from post {}", currentUser.getUsername(), postId);
+            return false;
+        } else {
+            Bookmark bookmark = Bookmark.builder()
+                    .user(currentUser)
+                    .post(post)
+                    .build();
+            bookmarkRepository.save(bookmark);
+            logger.info("User {} bookmarked post {}", currentUser.getUsername(), postId);
+            return true;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<PostResponse> getBookmarkedPosts(User currentUser) {
+        return bookmarkRepository.findBookmarkedPostsByUserId(currentUser.getId())
+                .stream()
+                .map(post -> mapToPostResponse(post, currentUser))
+                .collect(Collectors.toList());
     }
 
     private PostResponse mapToPostResponse(Post post, User currentUser) {
@@ -91,6 +131,8 @@ public class PostService {
         long commentCount = commentRepository.countByPostId(post.getId());
         boolean liked = currentUser != null &&
                 likeRepository.existsByUserIdAndPostId(currentUser.getId(), post.getId());
+        boolean bookmarked = currentUser != null &&
+                bookmarkRepository.existsByUserIdAndPostId(currentUser.getId(), post.getId());
 
         return PostResponse.builder()
                 .id(post.getId())
@@ -102,6 +144,7 @@ public class PostService {
                 .likeCount(likeCount)
                 .commentCount(commentCount)
                 .likedByCurrentUser(liked)
+                .bookmarkedByCurrentUser(bookmarked)
                 .createdAt(post.getCreatedAt())
                 .build();
     }

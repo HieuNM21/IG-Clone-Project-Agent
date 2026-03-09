@@ -8,7 +8,10 @@ import com.instagram.model.Post;
 import com.instagram.model.User;
 import com.instagram.repository.CommentRepository;
 import com.instagram.repository.PostRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +21,8 @@ import java.util.stream.Collectors;
 @Service
 public class CommentService {
 
+    private static final Logger logger = LoggerFactory.getLogger(CommentService.class);
+
     @Autowired
     private CommentRepository commentRepository;
 
@@ -25,7 +30,10 @@ public class CommentService {
     private PostRepository postRepository;
 
     @Autowired
-    private NotificationProducer notificationProducer;
+    private NotificationService notificationService;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @Transactional
     public CommentResponse addComment(Long postId, CommentRequest request, User currentUser) {
@@ -39,10 +47,17 @@ public class CommentService {
                 .build();
 
         comment = commentRepository.save(comment);
+        logger.info("User {} commented on post {}: '{}'", currentUser.getUsername(), postId, request.getContent());
 
-        // Send notification if commenting on someone else's post
+        CommentResponse response = mapToCommentResponse(comment);
+
+        // Push comment to all subscribers of the post topic
+        messagingTemplate.convertAndSend("/topic/post." + postId + ".comments", response);
+        logger.info("Comment pushed to /topic/post.{}.comments", postId);
+
+        // Send notification
         if (!post.getUser().getId().equals(currentUser.getId())) {
-            notificationProducer.sendNotification(NotificationEvent.builder()
+            notificationService.createAndPushNotification(NotificationEvent.builder()
                     .userId(post.getUser().getId())
                     .actorId(currentUser.getId())
                     .type("COMMENT")
@@ -50,7 +65,7 @@ public class CommentService {
                     .build());
         }
 
-        return mapToCommentResponse(comment);
+        return response;
     }
 
     @Transactional(readOnly = true)

@@ -6,12 +6,16 @@ import com.instagram.model.Post;
 import com.instagram.model.User;
 import com.instagram.repository.LikeRepository;
 import com.instagram.repository.PostRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class LikeService {
+
+    private static final Logger logger = LoggerFactory.getLogger(LikeService.class);
 
     @Autowired
     private LikeRepository likeRepository;
@@ -20,7 +24,7 @@ public class LikeService {
     private PostRepository postRepository;
 
     @Autowired
-    private NotificationProducer notificationProducer;
+    private NotificationService notificationService;
 
     @Transactional
     public boolean toggleLike(Long postId, User currentUser) {
@@ -31,17 +35,19 @@ public class LikeService {
 
         if (alreadyLiked) {
             likeRepository.deleteByUserIdAndPostId(currentUser.getId(), postId);
-            return false; // unliked
+            logger.info("User {} unliked post {}", currentUser.getUsername(), postId);
+            return false;
         } else {
             Like like = Like.builder()
                     .user(currentUser)
                     .post(post)
                     .build();
             likeRepository.save(like);
+            logger.info("User {} liked post {}", currentUser.getUsername(), postId);
 
-            // Send notification if liking someone else's post
+            // Send notification directly (no RabbitMQ)
             if (!post.getUser().getId().equals(currentUser.getId())) {
-                notificationProducer.sendNotification(NotificationEvent.builder()
+                notificationService.createAndPushNotification(NotificationEvent.builder()
                         .userId(post.getUser().getId())
                         .actorId(currentUser.getId())
                         .type("LIKE")
@@ -49,7 +55,7 @@ public class LikeService {
                         .build());
             }
 
-            return true; // liked
+            return true;
         }
     }
 }
