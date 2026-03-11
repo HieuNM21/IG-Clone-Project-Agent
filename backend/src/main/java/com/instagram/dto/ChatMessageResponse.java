@@ -1,5 +1,6 @@
 package com.instagram.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import java.time.LocalDateTime;
 
@@ -11,7 +12,14 @@ public class ChatMessageResponse {
     private String senderAvatarUrl;
     private Long receiverId;
     private String groupId;
+    @JsonProperty("isGroup")
     private boolean isGroup;
     private String content;
+    @JsonProperty("isRead")
+    private boolean isRead;
+    private Long replyToId;
+    private String replyToContent;
+    private String replyToUsername;
+    private String reaction;
     private LocalDateTime createdAt;
 }

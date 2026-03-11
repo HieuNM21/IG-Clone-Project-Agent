@@ -11,4 +11,6 @@ public class ChatMessageRequest {
 
     @JsonProperty("isGroup")
     private boolean isGroup;
+
+    private Long replyToId;
 }

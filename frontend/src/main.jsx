@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import { WebSocketProvider } from './context/WebSocketContext';
+import { MiniChatProvider } from './context/MiniChatContext';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -11,7 +12,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <AuthProvider>
         <WebSocketProvider>
-          <App />
+          <MiniChatProvider>
+            <App />
+          </MiniChatProvider>
         </WebSocketProvider>
       </AuthProvider>
     </BrowserRouter>

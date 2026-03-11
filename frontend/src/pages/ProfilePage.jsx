@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import { useMiniChat } from '../context/MiniChatContext';
 import EditProfileModal from '../components/EditProfileModal';
 import { HiOutlineViewGrid } from 'react-icons/hi';
 import { FiBookmark } from 'react-icons/fi';
@@ -10,6 +11,7 @@ import { IoPaperPlaneOutline } from 'react-icons/io5';
 const ProfilePage = () => {
   const { username } = useParams();
   const { user: currentUser } = useAuth();
+  const { openChat } = useMiniChat();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -61,7 +63,7 @@ const ProfilePage = () => {
   };
 
   const handleMessageUser = () => {
-    navigate('/direct', { state: { startChatWith: profile } });
+    openChat({ type: 'user', data: profile });
   };
 
   if (loading) {

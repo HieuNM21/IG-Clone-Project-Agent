@@ -24,11 +24,22 @@ public class ChatMessage {
     @Column(name = "group_id", length = 100)
     private String groupId;
 
+    @Builder.Default
     @Column(name = "is_group", nullable = false)
     private Boolean isGroup = false;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
+
+    @Builder.Default
+    @Column(name = "is_read", nullable = false)
+    private Boolean isRead = false;
+
+    @Column(name = "reply_to_id")
+    private Long replyToId;
+
+    @Column(name = "reaction", length = 20)
+    private String reaction;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

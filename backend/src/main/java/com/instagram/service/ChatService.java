@@ -29,6 +29,7 @@ public class ChatService {
                 .content(request.getContent())
                 .isGroup(request.isGroup())
                 .groupId(request.getGroupId())
+                .replyToId(request.getReplyToId())
                 .build();
 
         if (!request.isGroup() && request.getReceiverId() != null) {
@@ -63,17 +64,77 @@ public class ChatService {
         return userRepository.findAllById(partnerIds);
     }
 
+    @Transactional(readOnly = true)
+    public ChatMessageResponse getLastDirectMessage(Long userId1, Long userId2) {
+        List<ChatMessage> msgs = chatMessageRepository.findLastDirectMessage(userId1, userId2);
+        if (msgs.isEmpty()) return null;
+        return mapToResponse(msgs.get(0));
+    }
+
+    @Transactional(readOnly = true)
+    public ChatMessageResponse getLastGroupMessage(String groupId) {
+        List<ChatMessage> msgs = chatMessageRepository.findLastGroupMessage(groupId);
+        if (msgs.isEmpty()) return null;
+        return mapToResponse(msgs.get(0));
+    }
+
+    @Transactional
+    public void markDirectAsRead(Long senderId, Long receiverId) {
+        chatMessageRepository.markDirectMessagesAsRead(senderId, receiverId);
+    }
+
+    @Transactional
+    public void markGroupAsRead(String groupId, Long userId) {
+        chatMessageRepository.markGroupMessagesAsRead(groupId, userId);
+    }
+
+    @Transactional
+    public ChatMessageResponse addReaction(Long messageId, String reaction) {
+        ChatMessage message = chatMessageRepository.findById(messageId)
+                .orElseThrow(() -> new RuntimeException("Message not found"));
+        // Toggle: if same reaction, remove it; if different, replace
+        if (reaction.equals(message.getReaction())) {
+            message.setReaction(null);
+        } else {
+            message.setReaction(reaction);
+        }
+        message = chatMessageRepository.save(message);
+        return mapToResponse(message);
+    }
+
+    @Transactional
+    public void deleteDirectConversation(Long userId1, Long userId2) {
+        chatMessageRepository.deleteDirectConversation(userId1, userId2);
+    }
+
+    @Transactional
+    public void deleteGroupConversation(String groupId) {
+        chatMessageRepository.deleteGroupMessages(groupId);
+    }
+
     private ChatMessageResponse mapToResponse(ChatMessage message) {
-        return ChatMessageResponse.builder()
+        ChatMessageResponse.ChatMessageResponseBuilder builder = ChatMessageResponse.builder()
                 .id(message.getId())
                 .senderId(message.getSender().getId())
                 .senderUsername(message.getSender().getUsername())
                 .senderAvatarUrl(message.getSender().getAvatarUrl())
                 .receiverId(message.getReceiver() != null ? message.getReceiver().getId() : null)
                 .groupId(message.getGroupId())
-                .isGroup(message.getIsGroup())
+                .isGroup(message.getIsGroup() != null && message.getIsGroup())
                 .content(message.getContent())
-                .createdAt(message.getCreatedAt())
-                .build();
+                .isRead(message.getIsRead() != null && message.getIsRead())
+                .replyToId(message.getReplyToId())
+                .reaction(message.getReaction())
+                .createdAt(message.getCreatedAt());
+
+        // Populate reply context
+        if (message.getReplyToId() != null) {
+            chatMessageRepository.findById(message.getReplyToId()).ifPresent(replyMsg -> {
+                builder.replyToContent(replyMsg.getContent());
+                builder.replyToUsername(replyMsg.getSender().getUsername());
+            });
+        }
+
+        return builder.build();
     }
 }

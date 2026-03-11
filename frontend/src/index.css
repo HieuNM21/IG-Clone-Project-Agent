@@ -21,21 +21,12 @@ body {
 }
 
 /* Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #121212;
-}
-::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #121212; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #555; }
 
-/* Gradient text utility */
+/* Gradient text */
 .text-gradient {
   background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
   -webkit-background-clip: text;
@@ -43,53 +34,48 @@ body {
   background-clip: text;
 }
 
-/* Instagram gradient border for story rings */
+/* Story ring */
 .story-ring {
   background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
   padding: 2px;
   border-radius: 50%;
 }
-
 .story-ring-inner {
   background: #0a0a0a;
   padding: 2px;
   border-radius: 50%;
 }
 
-/* Smooth transitions */
+/* Transitions */
 .transition-smooth {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Glass effect */
+/* Glass */
 .glass {
   background: rgba(30, 30, 30, 0.8);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
 
-/* Animated gradient background for auth pages */
+/* Auth gradient */
 .auth-gradient {
   background: linear-gradient(-45deg, #0a0a0a, #1a0a1e, #0a1a2e, #1e0a0a);
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
 }
-
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 
-/* Pulse animation for notification badge */
+/* Pulse notification badge */
 @keyframes pulse-badge {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.2); }
 }
-
-.badge-pulse {
-  animation: pulse-badge 2s ease-in-out infinite;
-}
+.badge-pulse { animation: pulse-badge 2s ease-in-out infinite; }
 
 /* Like animation */
 @keyframes heartBeat {
@@ -99,26 +85,246 @@ body {
   45% { transform: scale(1.15); }
   60% { transform: scale(1); }
 }
+.heart-beat { animation: heartBeat 0.6s ease-in-out; }
 
-.heart-beat {
-  animation: heartBeat 0.6s ease-in-out;
-}
-
-/* Fade in animation */
+/* Fade in */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+.fade-in { animation: fadeIn 0.4s ease-out forwards; }
 
-.fade-in {
-  animation: fadeIn 0.4s ease-out forwards;
-}
-
-/* Hide scrollbar for story tray */
+/* Hide scrollbar */
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* =============================================
+   SIDEBAR NAVIGATION
+   ============================================= */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 72px;
+  background: #000;
+  border-right: 1px solid #262626;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.sidebar:hover {
+  width: 244px;
+}
+
+/* When drawer is open, keep sidebar narrow */
+.sidebar.sidebar-narrow {
+  width: 72px;
+}
+.sidebar.sidebar-narrow:hover {
+  width: 72px;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 12px 12px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+  text-decoration: none;
+  color: #fafafa;
+}
+.sidebar-nav-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.sidebar-nav-item.active .sidebar-icon {
+  transform: scale(1.05);
+}
+
+.sidebar-icon {
+  font-size: 26px;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.sidebar-label {
+  font-size: 15px;
+  opacity: 0;
+  transition: opacity 0.2s ease 0.1s;
+  overflow: hidden;
+}
+.sidebar:hover .sidebar-label {
+  opacity: 1;
+}
+.sidebar.sidebar-narrow .sidebar-label {
+  opacity: 0;
+}
+
+.sidebar-logo {
+  padding: 24px 12px 20px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 76px;
+}
+.sidebar-logo-text {
+  font-size: 22px;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.2s ease 0.1s;
+  white-space: nowrap;
+}
+.sidebar:hover .sidebar-logo-text {
+  opacity: 1;
+}
+.sidebar.sidebar-narrow .sidebar-logo-text {
+  opacity: 0;
+}
+
+/* =============================================
+   NOTIFICATION DRAWER
+   ============================================= */
+
+.notification-drawer {
+  position: fixed;
+  top: 0;
+  left: 72px;
+  height: 100vh;
+  width: 0;
+  background: #000;
+  border-right: 1px solid #262626;
+  z-index: 99;
+  overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.notification-drawer.open {
+  width: 360px;
+}
+
+/* Drawer overlay to close on outside click */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 98;
+}
+
+/* =============================================
+   FLOATING MINI CHAT
+   ============================================= */
+
+.mini-chat {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  width: 340px;
+  height: 450px;
+  background: #1e1e1e;
+  border: 1px solid #363636;
+  border-radius: 12px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+.mini-chat.minimized {
+  height: 48px;
+  cursor: pointer;
+}
+
+@keyframes miniChatSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.mini-chat-enter {
+  animation: miniChatSlideUp 0.25s ease-out;
+}
+
+/* =============================================
+   MORE MENU POPUP
+   ============================================= */
+
+.more-menu {
+  position: absolute;
+  bottom: 64px;
+  left: 8px;
+  width: 220px;
+  background: #262626;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  z-index: 200;
+}
+.more-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  color: #fafafa;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+}
+.more-menu-item:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+/* =============================================
+   MOBILE BOTTOM BAR
+   ============================================= */
+
+.mobile-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background: #000;
+  border-top: 1px solid #262626;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 100;
+}
+
+/* =============================================
+   APP LAYOUT
+   ============================================= */
+
+.app-main-with-sidebar {
+  margin-left: 72px;
+  min-height: 100vh;
+}
+
+@media (max-width: 767px) {
+  .sidebar { display: none; }
+  .notification-drawer { display: none; }
+  .app-main-with-sidebar {
+    margin-left: 0;
+    padding-bottom: 56px;
+  }
+  .mini-chat {
+    width: calc(100vw - 16px);
+    right: 8px;
+    bottom: 60px;
+  }
 }

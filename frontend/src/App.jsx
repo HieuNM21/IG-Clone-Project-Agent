@@ -6,7 +6,9 @@ import FeedPage from './pages/FeedPage';
 import ProfilePage from './pages/ProfilePage';
 import DirectPage from './pages/DirectPage';
 import PostPage from './pages/PostPage';
-import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
+import MobileBottomBar from './components/MobileBottomBar';
+import FloatingMiniChat from './components/FloatingMiniChat';
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -25,8 +27,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-ig-darker text-ig-text">
-      {isAuthenticated && <Navbar />}
-      <main className={isAuthenticated ? 'pt-16' : ''}>
+      {isAuthenticated && <Sidebar />}
+      {isAuthenticated && <MobileBottomBar />}
+      <main className={isAuthenticated ? 'app-main-with-sidebar' : ''}>
         <Routes>
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
@@ -37,6 +40,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
+      {isAuthenticated && <FloatingMiniChat />}
     </div>
   );
 }
