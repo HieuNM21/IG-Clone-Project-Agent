@@ -2,10 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import { useMiniChat } from '../context/MiniChatContext';
+import { useCall } from '../context/CallContext';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../context/WebSocketContext';
 import { IoSend, IoClose } from 'react-icons/io5';
-import { FiSearch, FiEdit, FiUsers, FiMoreVertical, FiTrash2, FiUserPlus, FiCornerUpLeft, FiCheck, FiCheckCircle, FiExternalLink } from 'react-icons/fi';
+import { FiSearch, FiEdit, FiUsers, FiMoreVertical, FiTrash2, FiUserPlus, FiCornerUpLeft, FiCheck, FiCheckCircle, FiExternalLink, FiPhone, FiVideo } from 'react-icons/fi';
 import { IoPaperPlaneOutline } from 'react-icons/io5';
 
 const REACTIONS = ['❤️', '😂', '😮', '😢', '🔥', '👍'];
@@ -29,6 +30,7 @@ const DirectPage = () => {
   const { user } = useAuth();
   const { subscribe, connected } = useWebSocket();
   const { openChat: openMiniChat } = useMiniChat();
+  const { startCall } = useCall();
   const location = useLocation();
 
   const [conversations, setConversations] = useState([]);
@@ -540,8 +542,26 @@ const DirectPage = () => {
                 </div>
               </div>
 
-              {/* Pop-out mini chat + Actions Menu */}
+              {/* Call Buttons + Pop-out mini chat + Actions Menu */}
               <div className="flex items-center gap-1">
+                {!isGroup && (
+                  <>
+                    <button
+                      onClick={() => startCall(selectedChat.data, false)}
+                      className="p-2 hover:bg-white/5 rounded-full transition-smooth text-ig-text-secondary hover:text-ig-text mr-1"
+                      title="Voice Call"
+                    >
+                      <FiPhone className="text-lg" />
+                    </button>
+                    <button
+                      onClick={() => startCall(selectedChat.data, true)}
+                      className="p-2 hover:bg-white/5 rounded-full transition-smooth text-ig-text-secondary hover:text-ig-text mr-2"
+                      title="Video Call"
+                    >
+                      <FiVideo className="text-lg" />
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={() => openMiniChat({ type: selectedChat.type, data: selectedChat.data })}
                   className="p-2 hover:bg-white/5 rounded-full transition-smooth text-ig-text-secondary hover:text-ig-text"

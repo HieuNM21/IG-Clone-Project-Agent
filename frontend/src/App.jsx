@@ -9,6 +9,8 @@ import PostPage from './pages/PostPage';
 import Sidebar from './components/Sidebar';
 import MobileBottomBar from './components/MobileBottomBar';
 import FloatingMiniChat from './components/FloatingMiniChat';
+import IncomingCallRing from './components/IncomingCallRing';
+import ActiveCallUI from './components/ActiveCallUI';
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -41,6 +43,8 @@ function App() {
         </Routes>
       </main>
       {isAuthenticated && <FloatingMiniChat />}
+      {isAuthenticated && <IncomingCallRing />}
+      {isAuthenticated && <ActiveCallUI />}
     </div>
   );
 }

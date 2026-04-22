@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useMiniChat } from '../context/MiniChatContext';
+import { useCall } from '../context/CallContext';
 import { useWebSocket } from '../context/WebSocketContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { IoSend, IoClose, IoRemove, IoChevronBack } from 'react-icons/io5';
-import { FiUsers, FiEdit, FiSearch } from 'react-icons/fi';
+import { FiUsers, FiEdit, FiSearch, FiPhone, FiVideo } from 'react-icons/fi';
 
 const FloatingMiniChat = () => {
   const { isOpen, isMinimized, activeConversation, closeChat, minimizeChat, restoreChat, openChat } = useMiniChat();
+  const { startCall } = useCall();
   const { subscribe, connected } = useWebSocket();
   const { user } = useAuth();
   const location = useLocation();
@@ -197,6 +199,20 @@ const FloatingMiniChat = () => {
           )}
         </div>
         <div className="flex items-center gap-0.5">
+          {/* Call actions for 1v1 */}
+          {!isMinimized && !showConversationList && target && !isGroup && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); startCall(target, false); }}
+                className="p-1 hover:bg-white/10 rounded-full transition-smooth mr-0.5">
+                <FiPhone className="text-sm" />
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); startCall(target, true); }}
+                className="p-1 hover:bg-white/10 rounded-full transition-smooth mr-1">
+                <FiVideo className="text-sm" />
+              </button>
+            </>
+          )}
+
           {!isMinimized && !showConversationList && !target && (
             <button onClick={(e) => { e.stopPropagation(); setShowConversationList(true); loadConversations(); }}
               className="p-1 hover:bg-white/10 rounded-full transition-smooth">
